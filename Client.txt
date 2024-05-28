@@ -1,0 +1,141 @@
+import React, { useEffect, useState } from "react";
+import { createAlert } from "../../../components/Alert/Alert";
+import BarChart from "../../../components/Charts/BarChart";
+import LineChart from "../../../components/Charts/LineChart";
+
+import io from "socket.io-client";
+
+import { useDispatch } from "react-redux";
+import { LiaFileInvoiceDollarSolid } from "react-icons/lia";
+import { HiOutlineDocumentCheck } from "react-icons/hi2";
+import { MdOutlineDashboardCustomize, MdOutlineDocumentScanner, MdOutlineLocalPolice } from "react-icons/md";
+import { BiTable } from "react-icons/bi";
+import { LuFileWarning } from "react-icons/lu";
+import { VscTools } from "react-icons/vsc";
+import { Link } from "react-router-dom";
+import { TiDocumentAdd } from "react-icons/ti";
+
+const socket = io("https://byrings.sy/"); // تغيير الرابط حسب عنوان الخادم
+
+const cards = [
+  {
+    title: "اتمام الدفع",
+    description: "طلبات بانتظار إتمام تسديد رسوم طلب الاكتتاب",
+    url: "/dashboard/requests-awaiting-first-payment",
+    icon: LiaFileInvoiceDollarSolid,
+  },
+  {
+    title: "التدقيق",
+    description: "طلبات بانتظار التدقيق",
+    url: "/dashboard/requests-are-pending-review",
+    icon: HiOutlineDocumentCheck,
+  },
+  {
+    title: "الموافقة الأمنية",
+    description: "طلبات بانتظار الموافقة الأمنية",
+    url: "/dashboard/requests-awaiting-security-approval",
+    icon: MdOutlineLocalPolice,
+  },
+  {
+    title: "اتمام الاوراق",
+    description: "طلبات بانتظار اتمام الاوراق ودفع ال2.5%",
+    url: "/dashboard/requests-awaiting-compleat-papers",
+    icon: TiDocumentAdd,
+  },
+  {
+    title: "مراجعة الاوراق",
+        description: "طلبات بانتظار مراجعة الاوراق",
+    url: "/dashboard/requests-awaiting-paper-review",
+    icon: MdOutlineDocumentScanner,
+  },
+  {
+    title: "قرار التخصيص",
+    description: "طلبات بانتظار قرار التخصيص",
+    url: "/dashboard/requests-awaiting-allocation-decision",
+    icon: MdOutlineDashboardCustomize,
+  },
+  {
+    title: "جدول المستثمرين",
+    description: "",
+    url: "#",
+    icon: BiTable,
+  },
+  {
+    title: "المرفوضة",
+    description: "الطلبات التي تم رفضها",
+    url: "/dashboard/requests-canceled",
+    icon: LuFileWarning,
+  },
+  {
+    title: "الاعدادات",
+    description: "",
+    url: "/dashboard/settings",
+    icon: VscTools,
+  },
+];
+
+export default function Dashboard() {
+  const dispatch = useDispatch();
+  const [postData, setPostData] = useState(null);
+
+  useEffect(() => {
+    socket.emit("userId", localStorage.getItem("userId"));
+    // Listen for 'post' event from the server
+    socket.on("post", (data) => {
+      // Update the state with the received data
+      createAlert(data.type, data.message);
+      setPostData(data);
+    });
+
+    // Listen for 'error' event from the server
+    socket.on("error", (error) => {
+      console.error("An error occurred:", error); // طباعة الخطأ في الكونسول
+    });
+
+    return () => {
+      socket.off("post");
+      socket.off("error");
+    };
+  }, []);
+  return (
+    <>
+     {/* { <div className="grid md:grid-cols-2 lg:grid-cols- w-full gap-3 h-fit">
+        <LineChart />
+        <BarChart /> */}
+        <div>
+          <h1>Real-time React App</h1>
+          {postData && (
+            <div>
+              <p>New POST request received!</p>
+              <p>Data: {JSON.stringify(postData)}</p>
+            </div>
+          )}
+        </div>
+        <div
+          onClick={() =>
+            createAlert("ss", "ss", "/dashboard/settings", dispatch)
+          }
+        >
+          ++
+        </div>
+      {/* </div>} */}
+      <div className="flex gap-6 w-full col-span-2 flex-wrap justify-center md:justify-start h-fit">
+          {cards.map((card, index) => (
+            <Link
+              key={index}
+              to={card.url}
+              className="group relative flex flex-col overflow-hidden items-start w-80 h-28 p-6 pt-4  bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+            >
+              <h5 className="mb-1 text-xl font-semibold text-gray-600 dark:text-white">
+                {card.title}{" "}
+              </h5>
+              <p className="text-sm font-semibold max-w-52 text-gray-500 dark:text-gray-400">
+                {card.description}{" "}
+              </p>
+              <card.icon className="group-hover:scale-125 absolute left-3 bottom-3 text-7xl  text-gray-400 dark:text-gray-500 duration-1000" />
+            </Link>
+          ))}
+        </div>
+    </>
+  );
+}
